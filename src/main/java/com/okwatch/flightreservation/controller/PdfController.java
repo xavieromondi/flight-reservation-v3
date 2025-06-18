@@ -1,5 +1,6 @@
 package com.okwatch.flightreservation.controller;
 
+import jakarta.annotation.Resource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,7 +19,7 @@ import java.io.IOException;
 @RequestMapping("/api/pdf")
 public class PdfController {
     @GetMapping("/download/{reservationId}")
-    public ResponseEntity<InputStreamResource> downloadTicket(@PathVariable Long reservationId) throws IOException, FileNotFoundException {
+    public ResponseEntity<InputStreamResource> downloadTicket(@PathVariable Long reservationId) throws IOException {
         String tempDir = System.getProperty("java.io.tmpdir");
         String filePath = tempDir + "/reservation_" + reservationId + ".pdf";
 
