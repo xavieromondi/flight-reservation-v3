@@ -40,37 +40,33 @@ public class MpesaController {
     // ✅ Handle Safaricom Callback
     @PostMapping("/callback")
     public ResponseEntity<String> handleCallback(@RequestBody Map<String, Object> payload) {
-        System.out.println("📥 M-Pesa Callback Received");
-        System.out.println("🔍 Full Payload: " + payload);
+        // Respond to Safaricom immediately
+        ResponseEntity<String> response = ResponseEntity.ok("Callback received");
 
-        try {
-            Map<String, Object> body = (Map<String, Object>) payload.get("Body");
-            if (body == null) throw new RuntimeException("Missing 'Body'");
+        new Thread(() -> {
+            try {
+                System.out.println("📥 M-Pesa Callback Received");
+                System.out.println("🔍 Full Payload: " + payload);
 
-            Map<String, Object> stkCallback = (Map<String, Object>) body.get("stkCallback");
-            if (stkCallback == null) throw new RuntimeException("Missing 'stkCallback'");
+                Map<String, Object> body = (Map<String, Object>) payload.get("Body");
+                Map<String, Object> stkCallback = (Map<String, Object>) body.get("stkCallback");
 
-            Integer resultCode = (Integer) stkCallback.get("ResultCode");
-            String resultDesc = (String) stkCallback.get("ResultDesc");
-            String checkoutRequestId = (String) stkCallback.get("CheckoutRequestID");
+                Integer resultCode = (Integer) stkCallback.get("ResultCode");
+                String resultDesc = (String) stkCallback.get("ResultDesc");
+                String checkoutRequestId = (String) stkCallback.get("CheckoutRequestID");
 
-            System.out.println("✅ Parsed values:");
-            System.out.println("  - CheckoutRequestID: " + checkoutRequestId);
-            System.out.println("  - ResultCode: " + resultCode);
-            System.out.println("  - ResultDesc: " + resultDesc);
+                MpesaTransaction transaction = new MpesaTransaction(checkoutRequestId, resultCode, resultDesc);
+                transactionRepository.save(transaction);
 
-            // Save to DB
-            MpesaTransaction transaction = new MpesaTransaction(checkoutRequestId, resultCode, resultDesc);
-            transactionRepository.save(transaction);
+                System.out.println("💾 Saved transaction: " + transaction);
+            } catch (Exception e) {
+                System.err.println("❌ Callback error: " + e.getMessage());
+            }
+        }).start(); // async execution
 
-            System.out.println("💾 Saved transaction: " + transaction);
-        } catch (Exception e) {
-            System.err.println("❌ Callback error: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        return ResponseEntity.ok("✅ Callback processed");
+        return response;
     }
+
 
 
     // ✅ Check payment status
